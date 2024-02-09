@@ -1,0 +1,81 @@
+ACTOR(Act_id, Act_Name, Act_Gender) 
+DIRECTOR(Dir_id, Dir_Name, Dir_Phone) 
+MOVIES(Mov_id, Mov_Title, Mov_Year, Mov_Lang, Dir_id) 
+MOVIE_CAST(Act_id, Mov_id, Role) 
+RATING(Mov_id, Rev_Stars) 
+CREATE TABLE ACTOR 
+( Act_id INT PRIMARY KEY, 
+ Act_name VARCHAR(20) NOT NULL, 
+ Act_gender CHAR 
+); 
+INSERT INTO ACTOR VALUES ('101',' James Stewart','M');
+
+CREATE TABLE DIRECTOR 
+( Dir_id INT PRIMARY KEY, 
+ Dir_name VARCHAR(20) NOT NULL, 
+ Dir_phone INT(12) 
+); 
+INSERT INTO DIRECTOR VALUES('201','Alfred Hitchcock','987654001');
+
+CREATE TABLE MOVIES 
+( Mov_id INT PRIMARY KEY, 
+ Mov_title VARCHAR(30), 
+ Mov_year INT, 
+ Mov_lang VARCHAR(10), 
+ Dir_id INT, 
+ CONSTRAINT dir_dirid_fk FOREIGN KEY(Dir_id) REFERENCES DIRECTOR(Dir_id) 
+); 
+INSERT INTO MOVIES VALUES('901','Vertigo','1958','English','205');
+
+CREATE TABLE MOVIE_CAST 
+( Act_id INT, 
+ Mov_id INT, 
+ Role VARCHAR(20), 
+ CONSTRAINT mc_actid_movid_pk PRIMARY KEY(Act_id,Mov_id), 
+ CONSTRAINT mc_actid_fk FOREIGN KEY(Act_id) REFERENCES ACTOR(Act_id), 
+ CONSTRAINT mc_movid_fk FOREIGN KEY(Mov_id) REFERENCES MOVIES(Mov_id) 
+); 
+INSERT INTO MOVIE_CAST VALUES('101','901','John Scottie Ferguson');
+
+CREATE TABLE RATING 
+( Mov_id INT, 
+ Rev_stars INT, 
+ CONSTRAINT r_movid_revstars_pk PRIMARY KEY(Mov_id,Rev_stars), 
+ CONSTRAINT r_movid_fk FOREIGN KEY(Mov_id) REFERENCES MOVIES(Mov_id) 
+); 
+INSERT INTO RATING VALUES('901','4');
+
+SELECT Mov_title 
+FROM MOVIES 
+WHERE Dir_id IN ( SELECT Dir_id 
+FROM DIRECTOR 
+WHERE Dir_name LIKE '%Hitchcock');
+
+SELECT DISTINCT Mov_title 
+ FROM MOVIES 
+ WHERE Mov_id IN ( SELECT Mov_id 
+FROM MOVIE_CAST 
+WHERE Act_id IN ( SELECT Act_id 
+ FROM MOVIE_CAST 
+ GROUP BY Act_id 
+ HAVING COUNT(Mov_id )>1));
+
+
+SELECT DISTINCT A.Act_name 
+FROM ACTOR A JOIN MOVIE_CAST C JOIN MOVIES M 
+ON A.Act_id =C.Act_id AND C.Mov_id= M.Mov_id 
+WHERE M.Mov_year<2000 OR M.Mov_year>2015;
+
+SELECT MOVIES.Mov_title,RATING.Mov_id,SUM(RATING.Rev_stars) 
+AS Num_stars,MAX(Rev_stars) AS Max_star 
+ FROM MOVIES RIGHT OUTER JOIN RATING 
+ON MOVIES.Mov_id=RATING.Mov_id 
+GROUP BY RATING.Mov_id ;
+
+UPDATE RATING 
+SET Rev_stars = 5 
+WHERE Mov_id IN( SELECT Mov_id 
+FROM MOVIES 
+WHERE Dir_id IN( SELECT Dir_id 
+ FROM DIRECTOR 
+WHERE Dir_name='Stanley Kubrick'));
